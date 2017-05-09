@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,17 +25,23 @@ public class DataBaseHelper{
         mDataBaseOpenHelper = new DataBaseOpenHelper(context);
     }
 
-    void ShowAllColumns()
+    public void ShowAllColumns()
     {
         SQLiteDatabase db = mDataBaseOpenHelper.getWritableDatabase();
 
         String[] columns = { DataBaseOpenHelper.DATABASE_ID, DataBaseOpenHelper.DATABASE_CUSTOMER_NAME};
         Cursor cursor = db.query(DataBaseOpenHelper.DATABASE_TABLE, columns, null, null, null, null, null);
+
+        String allData = "";
         while(cursor.moveToNext())
         {
-            int count = cursor.getCount();
-            count ++;
+            String idString = cursor.getString(cursor.getColumnIndex(DataBaseOpenHelper.DATABASE_ID));
+            String name = cursor.getString(cursor.getColumnIndex(DataBaseOpenHelper.DATABASE_CUSTOMER_NAME));
+
+            allData += idString + " " + name + "\n";
         }
+
+        Message.message(mDataBaseOpenHelper.getContext(), allData);
 
     }
 
@@ -50,7 +57,7 @@ public class DataBaseHelper{
 
     static class DataBaseOpenHelper extends SQLiteOpenHelper
     {
-        private static final String DATABASE_NAME = "customers";
+        private static final String DATABASE_NAME = "customers.db";
         private static final String DATABASE_TABLE = "users";
         private static final String DATABASE_ID = "_id";
         private static final String DATABASE_CUSTOMER_NAME = "name";
@@ -106,7 +113,7 @@ public class DataBaseHelper{
         private void copyDataBase() throws IOException {
             String dbPath = DATABASE_PATH+DATABASE_NAME;
 
-            InputStream myInput = mContext.getAssets().open(DATABASE_NAME);
+            InputStream myInput = getContext().getAssets().open(DATABASE_NAME);
 
             String outputPath = DATABASE_PATH + DATABASE_NAME;
             OutputStream dbFile = new FileOutputStream(outputPath);
@@ -123,22 +130,17 @@ public class DataBaseHelper{
         }
 
         private boolean CheckDataBase() {
-            SQLiteDatabase checkDB = null;
+            boolean checkDB = false;
             try {
                 String dbPath = DATABASE_PATH+DATABASE_NAME;
-                checkDB = SQLiteDatabase.openDatabase(dbPath,  null, SQLiteDatabase.OPEN_READONLY);
+                File dbFile = new File(dbPath);
+                checkDB = dbFile.exists();
             }
             catch (SQLiteException e)
             {
 
             }
-
-            if(checkDB != null)
-            {
-                checkDB.close();
-                return true;
-            }
-            return false;
+            return checkDB;
         }
 
         @Override
@@ -157,6 +159,10 @@ public class DataBaseHelper{
         @Override
         public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
 
+        }
+
+        public Context getContext() {
+            return mContext;
         }
     }
 }
